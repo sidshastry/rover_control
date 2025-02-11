@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rover Control Panel</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="grid-container">
+        <!-- Rover Status Widget -->
+        <div class="widget" id="status-widget">
+            <h3>Rover Status</h3>
+            <div id="rover-status">
+                <div><span class="status-indicator" id="connection-status"></span> Connection Status</div>
+                <p>Rover ID: <span id="rover-id">-</span></p>
+                <p>Rover Name: <span id="rover-name">-</span></p>
+                <p>Battery: <span id="battery-level">-</span>%</p>
+                <p>Last Heartbeat: <span id="last-heartbeat">-</span></p>
+            </div>
+        </div>
+
+        <!-- Video Feed Widget -->
+        <div class="widget">
+            <h3>Live Video Feed</h3>
+            <video id="video-feed" autoplay>
+                Your browser doesn't support video playback.
+            </video>
+        </div>
+
+        <!-- Control Panel Widget -->
+        <div class="widget" id="control-panel">
+            <h3>Control Panel</h3>
+            <div>
+                <label>Mode: </label>
+                <select id="control-mode">
+                    <option value="manual">Manual</option>
+                    <option value="auto">Autonomous</option>
+                </select>
+            </div>
+            <div id="manual-controls">
+                <div>
+                    <button onclick="control('forward')">Forward</button>
+                </div>
+                <div>
+                    <button onclick="control('left')">Left</button>
+                    <button onclick="control('stop')">Stop</button>
+                    <button onclick="control('right')">Right</button>
+                </div>
+                <div>
+                    <button onclick="control('backward')">Backward</button>
+                </div>
+                <h4>Camera Controls</h4>
+                <div>
+                    <button onclick="cameraControl('up')">Up</button>
+                    <button onclick="cameraControl('down')">Down</button>
+                    <button onclick="cameraControl('left')">Left</button>
+                    <button onclick="cameraControl('right')">Right</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image Gallery Widget -->
+        <div class="widget full-width">
+            <h3>Image Gallery</h3>
+            <div class="image-scroll" id="image-gallery">
+                <!-- Images will be populated here -->
+            </div>
+        </div>
+
+        <!-- Events Widget -->
+        <div class="widget full-width">
+            <h3>Events Log</h3>
+            <div id="events-widget">
+                <!-- Events will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html> 
