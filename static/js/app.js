@@ -54,14 +54,34 @@ function cameraControl(direction) {
 
 // Add image to gallery
 function addImage(imageUrl) {
-    const gallery = document.getElementById('image-gallery');
+    const carouselContainer = document.getElementById('carousel-container');
+    const isFirst = carouselContainer.children.length === 0;
+    
+    const item = document.createElement('div');
+    item.className = `carousel-item ${isFirst ? 'active' : ''}`;
+    
     const img = document.createElement('img');
     img.src = imageUrl;
-    gallery.appendChild(img);
-    gallery.scrollLeft = gallery.scrollWidth;
+    img.className = 'd-block w-100';
+    img.style.height = '400px';  // Fixed height for carousel
+    img.style.objectFit = 'cover';  // Maintain aspect ratio
+    
+    item.appendChild(img);
+    carouselContainer.appendChild(item);
 }
 
-// Initialize application
+// Add this function to handle media container height
+function adjustMediaContainerHeight() {
+    const leftColumn = document.querySelector('.left-column');
+    const mediaCard = document.querySelector('.media-card');
+    
+    if (leftColumn && mediaCard) {
+        const leftColumnHeight = leftColumn.offsetHeight;
+        mediaCard.style.height = `${leftColumnHeight}px`;
+    }
+}
+
+// Update the initialization function
 function initializeApp() {
     // Poll for heartbeat updates
     setInterval(async () => {
@@ -78,11 +98,29 @@ function initializeApp() {
 
     // WebSocket connection for events
     const eventsSocket = new WebSocket(`ws://${window.location.host}/ws/events`);
-    eventsSocket.onmessage = (event) => {
+    const eventsTable = new EventsTable('events-container');
+
+    // Update your websocket message handler
+    eventsSocket.onmessage = function(event) {
         const data = JSON.parse(event.data);
-        addEvent(data);
+        eventsTable.addEvent(data);
     };
+
+    // Add height adjustment
+    adjustMediaContainerHeight();
+    
+    // Handle window resize
+    window.addEventListener('resize', adjustMediaContainerHeight);
+    
+    // Handle tab changes (in case they affect height)
+    const tabButtons = document.querySelectorAll('[data-bs-toggle="tab"]');
+    tabButtons.forEach(button => {
+        button.addEventListener('shown.bs.tab', adjustMediaContainerHeight);
+    });
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', initializeApp); 
+document.addEventListener('DOMContentLoaded', initializeApp);
+
+// Make sure the height is adjusted after all content is loaded
+window.addEventListener('load', adjustMediaContainerHeight); 

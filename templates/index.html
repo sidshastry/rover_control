@@ -4,79 +4,307 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rover Control Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
-    <div class="grid-container">
-        <!-- Rover Status Widget -->
-        <div class="widget" id="status-widget">
-            <h3>Rover Status</h3>
-            <div id="rover-status">
-                <div><span class="status-indicator" id="connection-status"></span> Connection Status</div>
-                <p>Rover ID: <span id="rover-id">-</span></p>
-                <p>Rover Name: <span id="rover-name">-</span></p>
-                <p>Battery: <span id="battery-level">-</span>%</p>
-                <p>Last Heartbeat: <span id="last-heartbeat">-</span></p>
+    <div class="container-fluid p-4">
+        <div class="row">
+            <!-- Left Column -->
+            <div class="col-md-4 left-column">
+                <!-- Status Panel -->
+                <div class="status-card" id="status-panel">
+                    <h3>Rover Status</h3>
+                    <div>Loading status...</div>
+                </div>
+
+                <!-- Mode Selector -->
+                <div class="mode-selector">
+                    <button class="btn btn-primary" onclick="setMode('manual')">Manual Mode</button>
+                    <button class="btn btn-secondary" onclick="setMode('autonomous')">Autonomous Mode</button>
+                </div>
+
+                <div class="controls-container">
+                    <!-- Movement Controls -->
+                    <div class="control-grid">
+                        <button class="forward" onclick="sendCommand('forward')">↑</button>
+                        <button class="left" onclick="sendCommand('left')">←</button>
+                        <button class="stop" onclick="sendCommand('stop')">■</button>
+                        <button class="right" onclick="sendCommand('right')">→</button>
+                        <button class="backward" onclick="sendCommand('backward')">↓</button>
+                    </div>
+
+                    <!-- Camera Controls -->
+                    <div class="widget-container camera-widget">
+                        <h4><i class="fas fa-video"></i> Camera Controls</h4>
+                        <div class="camera-controls">
+                            <button class="tilt-up" onclick="adjustCamera(0, 30)" title="Tilt Up">
+                                <i class="fas fa-angle-up"></i>
+                            </button>
+                            <button class="pan-left" onclick="adjustCamera(-30, 0)" title="Pan Left">
+                                <i class="fas fa-angle-left"></i>
+                            </button>
+                            <button class="center" onclick="adjustCamera(0, 0)" title="Center Camera">
+                                <i class="fas fa-dot-circle"></i>
+                            </button>
+                            <button class="pan-right" onclick="adjustCamera(30, 0)" title="Pan Right">
+                                <i class="fas fa-angle-right"></i>
+                            </button>
+                            <button class="tilt-down" onclick="adjustCamera(0, -30)" title="Tilt Down">
+                                <i class="fas fa-angle-down"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Video Feed and Snapshots -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="live-tab" data-bs-toggle="tab" href="#live" role="tab">
+                                    <i class="fas fa-video"></i> Live Feed
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="snapshots-tab" data-bs-toggle="tab" href="#snapshots" role="tab">
+                                    <i class="fas fa-camera"></i> Snapshots
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content">
+                            <!-- Live Feed Tab -->
+                            <div class="tab-pane fade show active" id="live" role="tabpanel">
+                                <div class="video-container">
+                                    <img src="/video_feed" alt="Rover Camera Feed">
+                                    <button id="take-snapshot-btn" class="btn btn-primary mt-2" onclick="takeSnapshot()">
+                                        <i class="fas fa-camera"></i> Take Snapshot
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Snapshots Tab -->
+                            <div class="tab-pane fade" id="snapshots" role="tabpanel">
+                                <div id="snapshotsCarousel" class="carousel slide" data-bs-ride="carousel">
+                                    <div class="carousel-inner" id="carousel-items">
+                                        <!-- Snapshots will be loaded here -->
+                                    </div>
+                                    <button class="carousel-control-prev" type="button" data-bs-target="#snapshotsCarousel" data-bs-slide="prev">
+                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                        <span class="visually-hidden">Previous</span>
+                                    </button>
+                                    <button class="carousel-control-next" type="button" data-bs-target="#snapshotsCarousel" data-bs-slide="next">
+                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                        <span class="visually-hidden">Next</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Video Feed Widget -->
-        <div class="widget">
-            <h3>Live Video Feed</h3>
-            <video id="video-feed" autoplay>
-                Your browser doesn't support video playback.
-            </video>
-        </div>
-
-        <!-- Control Panel Widget -->
-        <div class="widget" id="control-panel">
-            <h3>Control Panel</h3>
-            <div>
-                <label>Mode: </label>
-                <select id="control-mode">
-                    <option value="manual">Manual</option>
-                    <option value="auto">Autonomous</option>
-                </select>
-            </div>
-            <div id="manual-controls">
-                <div>
-                    <button onclick="control('forward')">Forward</button>
+        <!-- Events Log (Full Width) -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <h3>Event Log</h3>
+                <div class="events-container" id="events-log">
+                    <div class="text-center">Loading events...</div>
                 </div>
-                <div>
-                    <button onclick="control('left')">Left</button>
-                    <button onclick="control('stop')">Stop</button>
-                    <button onclick="control('right')">Right</button>
+                <div class="d-flex justify-content-between mt-2">
+                    <button class="btn btn-secondary" onclick="previousPage()">Previous</button>
+                    <span id="page-info">Page 1</span>
+                    <button class="btn btn-secondary" onclick="nextPage()">Next</button>
                 </div>
-                <div>
-                    <button onclick="control('backward')">Backward</button>
-                </div>
-                <h4>Camera Controls</h4>
-                <div>
-                    <button onclick="cameraControl('up')">Up</button>
-                    <button onclick="cameraControl('down')">Down</button>
-                    <button onclick="cameraControl('left')">Left</button>
-                    <button onclick="cameraControl('right')">Right</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Image Gallery Widget -->
-        <div class="widget full-width">
-            <h3>Image Gallery</h3>
-            <div class="image-scroll" id="image-gallery">
-                <!-- Images will be populated here -->
-            </div>
-        </div>
-
-        <!-- Events Widget -->
-        <div class="widget full-width">
-            <h3>Events Log</h3>
-            <div id="events-widget">
-                <!-- Events will be populated here -->
             </div>
         </div>
     </div>
 
-    <script src="/static/js/app.js"></script>
+    <script>
+        let currentMode = 'autonomous';
+        let currentPage = 0;
+        const EVENTS_PER_PAGE = 50;
+        
+        async function updateStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const status = await response.json();
+                
+                document.getElementById('status-panel').innerHTML = `
+                    <h3>Rover Status</h3>
+                    <div class="status-item">
+                        <strong>Name:</strong> ${status.rover_name}
+                    </div>
+                    <div class="status-item">
+                        <strong>Battery:</strong> ${status.battery}%
+                    </div>
+                    <div class="status-item">
+                        <strong>Distance:</strong> ${status.distance}cm
+                    </div>
+                    <div class="status-item">
+                        <strong>Mode:</strong> ${status.mode}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error updating status:', error);
+            }
+        }
+        
+        async function updateEvents() {
+            try {
+                const response = await fetch(`/api/events?start=${currentPage * EVENTS_PER_PAGE}&limit=${EVENTS_PER_PAGE}`);
+                const data = await response.json();
+                
+                const eventsHtml = data.events.map(event => `
+                    <div class="event-item event-${event.event_type.toLowerCase()}">
+                        <strong>${new Date(event.timestamp * 1000).toLocaleTimeString()}</strong>
+                        [${event.event_type}] ${event.message}
+                    </div>
+                `).join('');
+                
+                document.getElementById('events-log').innerHTML = eventsHtml || '<div class="text-center">No events</div>';
+                document.getElementById('page-info').textContent = `Page ${currentPage + 1}`;
+            } catch (error) {
+                console.error('Error updating events:', error);
+            }
+        }
+        
+        function previousPage() {
+            if (currentPage > 0) {
+                currentPage--;
+                updateEvents();
+            }
+        }
+        
+        function nextPage() {
+            currentPage++;
+            updateEvents();
+        }
+        
+        async function setMode(mode) {
+            const response = await fetch('/api/mode', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({mode})
+            });
+            
+            if (response.ok) {
+                currentMode = mode;
+                updateStatus();
+            }
+        }
+        
+        async function sendCommand(command) {
+            if (currentMode !== 'manual') {
+                alert('Please switch to manual mode first');
+                return;
+            }
+            
+            await fetch(`/api/control/${command}`, {
+                method: 'POST'
+            });
+        }
+        
+        async function adjustCamera(pan, tilt) {
+            await fetch('/api/camera', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({pan, tilt})
+            });
+        }
+
+        async function takeSnapshot() {
+            try {
+                const button = document.querySelector('#take-snapshot-btn');
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Taking snapshot...';
+                
+                const response = await fetch('/api/snapshot', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    button.innerHTML = '<i class="fas fa-check"></i> Snapshot taken!';
+                    updateSnapshots();  // Refresh snapshots
+                    // Switch to snapshots tab
+                    const snapshotsTab = document.querySelector('#snapshots-tab');
+                    const tab = new bootstrap.Tab(snapshotsTab);
+                    tab.show();
+                } else {
+                    button.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Failed';
+                    alert('Failed to take snapshot: ' + result.error);
+                }
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-camera"></i> Take Snapshot';
+                }, 2000);
+            } catch (error) {
+                console.error('Error taking snapshot:', error);
+                alert('Error taking snapshot: ' + error.message);
+            }
+        }
+
+        async function updateSnapshots() {
+            try {
+                const response = await fetch('/api/snapshots');
+                const data = await response.json();
+                
+                console.log('Received snapshots:', data);  // Debug log
+                
+                const carouselInner = document.getElementById('carousel-items');
+                if (data.snapshots.length === 0) {
+                    carouselInner.innerHTML = `
+                        <div class="carousel-item active">
+                            <div class="d-flex align-items-center justify-content-center h-100">
+                                <p class="text-white">No snapshots available</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                carouselInner.innerHTML = data.snapshots.map((snapshot, index) => `
+                    <div class="carousel-item ${index === 0 ? 'active' : ''}">
+                        <img src="/static/snapshots/${snapshot.filename}" class="d-block w-100" alt="Snapshot">
+                        <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50">
+                            <p>${new Date(snapshot.timestamp).toLocaleString()}</p>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Initialize carousel
+                const carousel = new bootstrap.Carousel(document.getElementById('snapshotsCarousel'));
+            } catch (error) {
+                console.error('Error updating snapshots:', error);
+                document.getElementById('carousel-items').innerHTML = `
+                    <div class="carousel-item active">
+                        <div class="d-flex align-items-center justify-content-center h-100">
+                            <p class="text-white">Error loading snapshots</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Update status every second
+        setInterval(updateStatus, 1000);
+        
+        // Update events every 2 seconds
+        setInterval(updateEvents, 2000);
+
+        // Update snapshots when switching to snapshots tab
+        document.querySelector('a[href="#snapshots"]').addEventListener('shown.bs.tab', updateSnapshots);
+        
+        // Initial snapshots load
+        updateSnapshots();
+    </script>
 </body>
 </html> 

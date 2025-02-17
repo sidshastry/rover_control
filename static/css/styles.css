@@ -2,6 +2,7 @@ body {
     font-family: Arial, sans-serif;
     margin: 20px;
     background-color: #f0f0f0;
+    min-height: 100vh;
 }
 
 .grid-container {
@@ -33,20 +34,13 @@ body {
 }
 
 #video-feed {
+    height: 100%;
     width: 100%;
-    height: 300px;
-    background: #000;
+    object-fit: cover;
 }
 
 .image-scroll {
-    display: flex;
-    overflow-x: auto;
-    padding: 10px;
-}
-
-.image-scroll img {
-    height: 150px;
-    margin-right: 10px;
+    display: none;
 }
 
 .status-indicator {
@@ -63,4 +57,255 @@ body {
 
 .offline {
     background-color: #f44336;
+}
+
+#connection-status {
+    width: 12px;
+    height: 12px;
+    display: inline-block;
+    border-radius: 50%;
+}
+
+#connection-status.online {
+    background-color: #198754;  /* Bootstrap success color */
+}
+
+#connection-status.offline {
+    background-color: #dc3545;  /* Bootstrap danger color */
+}
+
+.btn {
+    min-width: 80px;
+}
+
+.nav-tabs .nav-link {
+    color: #6c757d;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    font-weight: 500;
+}
+
+.carousel {
+    height: 100%;
+}
+
+.carousel-inner {
+    height: 100%;
+}
+
+.carousel-item {
+    height: 100%;
+}
+
+.carousel-item img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+}
+
+.media-container {
+    background: #000;
+    height: 100%;  /* Will be set by JS */
+}
+
+.tab-pane {
+    height: 100%;
+}
+
+.container-fluid > .row:first-child {
+    margin-bottom: 0;
+}
+
+.container-fluid > .row:last-child {
+    margin-top: 2rem;
+}
+
+.media-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.media-card .card-body {
+    flex: 1;
+    padding: 0;
+}
+
+.right-column {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Control Grid Styles */
+.control-grid {
+    display: grid;
+    grid-template-areas:
+        ". forward ."
+        "left stop right"
+        ". backward .";
+    gap: 10px;
+    width: 200px;
+    margin: 20px auto;
+}
+
+.control-grid button {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+.control-grid button:hover {
+    background-color: #0056b3;
+}
+
+.control-grid button:active {
+    background-color: #004085;
+}
+
+.control-grid .forward { grid-area: forward; }
+.control-grid .backward { grid-area: backward; }
+.control-grid .left { grid-area: left; }
+.control-grid .right { grid-area: right; }
+.control-grid .stop { grid-area: stop; }
+
+/* Camera Controls */
+.camera-controls {
+    display: grid;
+    grid-template-areas:
+        ". tilt-up ."
+        "pan-left center pan-right"
+        ". tilt-down .";
+    gap: 10px;
+    width: 200px;
+    margin: 20px auto;
+}
+
+.camera-controls button {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 1px solid #007bff;
+    background-color: white;
+    color: #007bff;
+    font-size: 1.2em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.camera-controls button:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.camera-controls button:active {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.camera-controls .tilt-up { grid-area: tilt-up; }
+.camera-controls .tilt-down { grid-area: tilt-down; }
+.camera-controls .pan-left { grid-area: pan-left; }
+.camera-controls .pan-right { grid-area: pan-right; }
+.camera-controls .center { grid-area: center; }
+
+/* Events Container */
+.events-container {
+    height: 300px;
+    overflow-y: auto;
+    margin-top: 20px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.event-item {
+    padding: 8px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.event-warning { color: #ffc107; }
+.event-error { color: #dc3545; }
+.event-status { color: #28a745; }
+.event-control { color: #007bff; }
+
+/* Status and Mode Controls */
+.status-card {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+    flex: 0 0 auto;
+}
+
+.mode-selector {
+    margin: 20px 0;
+    flex: 0 0 auto;
+}
+
+.mode-selector button {
+    margin-right: 10px;
+}
+
+/* Widget Containers */
+.widget-container {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.camera-widget {
+    text-align: center;
+}
+
+/* Video and Carousel */
+.video-container {
+    height: 480px;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.video-container img {
+    max-height: calc(100% - 50px);
+    width: 100%;
+    object-fit: contain;
+}
+
+.carousel {
+    height: 480px;
+    background: #000;
+}
+
+.carousel-item {
+    height: 100%;
+}
+
+.carousel-item img {
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Layout */
+.left-column {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.controls-container {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 } 
