@@ -8,6 +8,9 @@ from vilib import Vilib  # Import sunfounder's video library
 import base64
 import cv2
 import os
+import numpy as np
+from PIL import Image
+import colorsys
 
 class Constants:
     # Drive settings
@@ -27,35 +30,48 @@ class Constants:
     BACKUP_STEPS = 3
 
 class RoverController:
+    _instance = None
+    _initialized = False
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(RoverController, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self, rover_id: int = 1, rover_name: str = "rover_1"):
-        self.px = Picarx()
-        self.event_buffer = EventBuffer()
-        self.running = True
-        self.mode = "autonomous"
-        self.rover_id = rover_id
-        self.rover_name = rover_name
-        self.battery = 100  # Mock battery level
-        
-        # Initialize camera and servos
-        self.px.set_dir_servo_angle(Constants.CAMERA_DEFAULT_ANGLE)
-        self.px.set_cam_pan_angle(Constants.CAMERA_DEFAULT_ANGLE)
-        self.px.set_cam_tilt_angle(Constants.CAMERA_DEFAULT_ANGLE)
-        
-        # Initialize video streaming
-        Vilib.camera_start(vflip=False, hflip=True)  # Try different flip combinations
-        # Start video server on port 9000
-        Vilib.display(local=False, web=True)  # Web display only
-        # Note: vilib uses port 9000 by default
-        self.add_event("STATUS", "Camera streaming started on port 9000")
-        
-        self._shutdown_event = threading.Event()
-        self._threads = []
-        
-        # Create snapshots directory if it doesn't exist
-        self.snapshots_dir = "static/snapshots"
-        os.makedirs(self.snapshots_dir, exist_ok=True)
-        self.max_snapshots = 10  # Keep last 10 snapshots
-    
+        # Only initialize once
+        if not RoverController._initialized:
+            self.px = Picarx()
+            self.event_buffer = EventBuffer()
+            self.running = True
+            self.mode = "manual"
+            self.rover_id = rover_id
+            self.rover_name = rover_name
+            self.battery = 100  # Mock battery level
+            
+            # Initialize camera and servos
+            self.px.set_dir_servo_angle(Constants.CAMERA_DEFAULT_ANGLE)
+            self.px.set_cam_pan_angle(Constants.CAMERA_DEFAULT_ANGLE)
+            self.px.set_cam_tilt_angle(Constants.CAMERA_DEFAULT_ANGLE)
+            
+            self.add_event("STATUS", "Camera streaming started on port 9000")
+            
+            self._shutdown_event = threading.Event()
+            self._threads = []
+            
+            # Create snapshots directory if it doesn't exist
+            self.snapshots_dir = "static/snapshots"
+            os.makedirs(self.snapshots_dir, exist_ok=True)
+            self.max_snapshots = 10  # Keep last 10 snapshots
+            
+            RoverController._initialized = True
+
+    @classmethod
+    def get_instance(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = cls(*args, **kwargs)
+        return cls._instance
+
     def get_status(self) -> dict:
         """Get current rover status"""
         status = RoverStatus(
@@ -239,4 +255,186 @@ class RoverController:
             } for f in snapshots]
         except Exception as e:
             self.add_event("ERROR", f"Failed to list snapshots: {str(e)}")
-            return [] 
+            return []
+
+    def initialize_vision(self):
+        """Initialize vision capabilities"""
+        Vilib.camera_start(vflip=False, hflip=True)
+        Vilib.display(local=True, web=True)
+        
+        # Load YOLO model
+        self.net = cv2.dnn.readNet(
+            "yolov3.weights",
+            "yolov3.cfg"
+        )
+        
+        # Load class names
+        with open("coco.names", "r") as f:
+            self.classes = [line.strip() for line in f.readlines()]
+        
+        # Get output layer names
+        self.layer_names = self.net.getLayerNames()
+        self.output_layers = [self.layer_names[i - 1] for i in self.net.getUnconnectedOutLayers()]
+
+    def analyze_current_view(self):
+        """Analyze the current camera view for objects and colors"""
+        try:
+            # Capture current frame using Vilib.img
+            frame = Vilib.img
+            if frame is None:
+                return {'success': False, 'error': 'Failed to capture frame'}
+
+            height, width = frame.shape[:2]
+
+            # Create blob from image
+            blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
+            self.net.setInput(blob)
+            outs = self.net.forward(self.output_layers)
+
+            # Process detections
+            class_ids = []
+            confidences = []
+            boxes = []
+
+            for out in outs:
+                for detection in out:
+                    scores = detection[5:]
+                    class_id = np.argmax(scores)
+                    confidence = scores[class_id]
+                    
+                    if confidence > 0.5:  # Confidence threshold
+                        # Object detected
+                        center_x = int(detection[0] * width)
+                        center_y = int(detection[1] * height)
+                        w = int(detection[2] * width)
+                        h = int(detection[3] * height)
+
+                        # Rectangle coordinates
+                        x = int(center_x - w / 2)
+                        y = int(center_y - h / 2)
+
+                        boxes.append([x, y, w, h])
+                        confidences.append(float(confidence))
+                        class_ids.append(class_id)
+
+            # Apply non-max suppression
+            indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
+            
+            # Process results
+            objects = []
+            for i in range(len(boxes)):
+                if i in indexes:
+                    objects.append({
+                        'class': self.classes[class_ids[i]],
+                        'confidence': confidences[i]
+                    })
+
+                    # Draw detection on frame
+                    x, y, w, h = boxes[i]
+                    label = f"{self.classes[class_ids[i]]}: {confidences[i]:.2f}"
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+            # Convert frame to RGB format for color analysis
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            colors = self._analyze_colors(frame_rgb)
+            
+            # Save the annotated frame
+            cv2.imwrite("static/latest_analysis.jpg", frame)
+
+            # Log the analysis results
+            if objects:
+                object_names = [obj['class'] for obj in objects]
+                self.add_event("ANALYSIS", f"Objects detected: {', '.join(object_names)}")
+            else:
+                self.add_event("ANALYSIS", "No objects detected")
+
+            if colors:
+                color_names = [f"{color['name']} ({(color['percentage'] * 100):.1f}%)" for color in colors[:3]]
+                self.add_event("ANALYSIS", f"Dominant colors: {', '.join(color_names)}")
+            
+            return {
+                'success': True,
+                'objects': objects,
+                'colors': colors,
+                'image_url': '/static/latest_analysis.jpg'
+            }
+            
+        except Exception as e:
+            print(f"Analysis error: {str(e)}")  # Add debug print
+            self.add_event("ERROR", f"Analysis failed: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
+    def _analyze_colors(self, frame, num_colors=5):
+        """Analyze dominant colors in the frame"""
+        try:
+            # Convert to PIL Image
+            img = Image.fromarray(frame)
+            
+            # Resize for faster processing
+            img = img.resize((150, 150))
+            
+            # Get colors from image
+            pixels = np.float32(img).reshape(-1, 3)
+            
+            # Use k-means to find dominant colors
+            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 200, .1)
+            flags = cv2.KMEANS_RANDOM_CENTERS
+            _, labels, palette = cv2.kmeans(pixels, num_colors, None, criteria, 10, flags)
+            
+            # Calculate color percentages
+            _, counts = np.unique(labels, return_counts=True)
+            total_pixels = sum(counts)
+            percentages = counts / total_pixels
+            
+            # Convert RGB to HSV for color naming
+            colors = []
+            for color, percentage in zip(palette, percentages):
+                rgb = color / 255
+                hsv = colorsys.rgb_to_hsv(*rgb)
+                color_name = self._get_color_name(hsv)
+                
+                colors.append({
+                    'name': color_name,
+                    'percentage': float(percentage)
+                })
+            
+            # Sort by percentage
+            colors.sort(key=lambda x: x['percentage'], reverse=True)
+            return colors
+            
+        except Exception as e:
+            print(f"Error analyzing colors: {e}")
+            return []
+
+    def _get_color_name(self, hsv):
+        """Convert HSV values to color names"""
+        h, s, v = hsv
+        
+        # Convert hue to 360 degree format
+        h *= 360
+        
+        if s < 0.1:
+            if v < 0.2:
+                return "black"
+            elif v > 0.8:
+                return "white"
+            return "gray"
+            
+        if h < 30:
+            return "red"
+        elif h < 90:
+            return "yellow"
+        elif h < 150:
+            return "green"
+        elif h < 210:
+            return "cyan"
+        elif h < 270:
+            return "blue"
+        elif h < 330:
+            return "magenta"
+        else:
+            return "red" 

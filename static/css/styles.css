@@ -308,4 +308,26 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+}
+
+.camera-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+#detection-results {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.detection-summary ul {
+    list-style-type: none;
+    padding-left: 15px;
+}
+
+.detection-summary li {
+    margin-bottom: 5px;
 } 

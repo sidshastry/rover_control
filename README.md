@@ -1,0 +1,169 @@
+I'll help you create the README.md file:
+
+```markdown:README.md
+# Rover Control Application
+
+A web-based control interface for the Picar-X rover with camera streaming, object detection, and manual/autonomous control modes.
+
+## Features
+
+- Live video streaming from rover camera
+- Manual and autonomous driving modes
+- Camera pan/tilt controls
+- Snapshot capture capability
+- Object detection using YOLO
+- Color analysis
+- Event logging
+- Responsive web interface
+
+## Prerequisites
+
+### Hardware
+- Picar-X rover
+- Raspberry Pi with camera module
+- Network connection
+
+### Software
+- Python 3.7+
+- pip (Python package installer)
+- OpenCV
+- SunFounder Vilib
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd rover-control
+```
+
+2. Install Python dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Download YOLO model files:
+```bash
+# Create a models directory
+mkdir models
+cd models
+
+# Download YOLOv3 weights (236MB)
+wget https://pjreddie.com/media/files/yolov3.weights
+
+# Download YOLOv3 configuration
+wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg
+
+# Download COCO class names
+wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
+
+cd ..
+```
+
+4. Update the model paths in `rover_controller.py`:
+```python
+self.net = cv2.dnn.readNet(
+    "models/yolov3.weights",
+    "models/yolov3.cfg"
+)
+
+with open("models/coco.names", "r") as f:
+    self.classes = [line.strip() for line in f.readlines()]
+```
+
+## Starting the Application
+
+1. Make sure your Picar-X is powered on and connected to your network.
+
+2. Start the rover control server:
+```bash
+python rover_server.py
+```
+
+3. Access the web interface:
+- Open a web browser
+- Navigate to `http://<raspberry-pi-ip>:8000`
+- Default port is 8000
+
+## Usage
+
+### Manual Control
+- Click "Manual Mode" to enable manual controls
+- Use arrow buttons for movement
+- Use camera controls to adjust view
+
+### Object Detection
+1. Click "Analyze Image" to perform object detection
+2. Results will show in a popup modal with:
+   - Annotated image
+   - Detected objects with confidence scores
+   - Dominant colors analysis
+3. Press ESC to close the results modal
+
+### Snapshots
+- Click "Take Snapshot" to capture the current view
+- View snapshots in the Snapshots tab
+- Last 10 snapshots are preserved
+
+## Event Types
+- STATUS: System status updates
+- CONTROL: Movement commands
+- ANALYSIS: Object detection results
+- WARNING: System warnings
+- ERROR: Error messages
+
+## File Structure
+```
+rover-control/
+├── rover_server.py      # FastAPI server
+├── rover_controller.py  # Rover control logic
+├── rover_data.py       # Data models
+├── templates/          # HTML templates
+│   └── index.html
+├── static/            # Static files
+│   ├── css/
+│   │   └── styles.css
+│   └── snapshots/     # Captured images
+└── models/           # YOLO model files
+    ├── yolov3.weights
+    ├── yolov3.cfg
+    └── coco.names
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. Camera not working:
+   - Check camera connection
+   - Ensure camera is enabled in Raspberry Pi configuration
+   - Verify camera permissions
+
+2. Object detection fails:
+   - Verify YOLO model files are downloaded correctly
+   - Check file paths in code
+   - Ensure OpenCV is installed with DNN support
+
+3. Movement controls not responding:
+   - Check if rover is in manual mode
+   - Verify hardware connections
+   - Check battery level
+
+### Error Messages
+
+- "Failed to capture frame": Camera access issue
+- "Model file not found": YOLO model files missing
+- "Movement command ignored": Wrong mode or hardware issue
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+```

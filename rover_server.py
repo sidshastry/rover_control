@@ -16,8 +16,10 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Initialize rover controller
-rover = RoverController()
+# Get the singleton instance
+rover = RoverController.get_instance()
+rover.initialize_vision()
+
 
 class CameraCommand(BaseModel):
     pan: Optional[int] = None
@@ -82,6 +84,18 @@ async def video_feed():
         video_stream(),
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
+
+@app.post("/api/analyze")
+async def analyze_view():
+    """Analyze the current camera view for objects and colors"""
+    try:
+        result = rover.analyze_current_view()
+        return result  # FastAPI will automatically convert this to JSON
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }
 
 def signal_handler(signum, frame):
     print("\nShutting down gracefully...")
