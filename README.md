@@ -1,6 +1,3 @@
-I'll help you create the README.md file:
-
-```markdown:README.md
 # Rover Control Application
 
 A web-based control interface for the Picar-X rover with camera streaming, object detection, and manual/autonomous control modes.
@@ -166,4 +163,3 @@ rover-control/
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-```
