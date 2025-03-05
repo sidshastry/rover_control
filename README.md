@@ -163,3 +163,30 @@ rover-control/
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Local Development Setup
+
+1. Download required vendor files:
+```bash
+# Create directories for vendor files
+mkdir -p static/vendor/bootstrap/css
+mkdir -p static/vendor/bootstrap/js
+mkdir -p static/vendor/fontawesome/css
+mkdir -p static/vendor/fontawesome/webfonts
+
+# Download Bootstrap files
+wget https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css -O static/vendor/bootstrap/css/bootstrap.min.css
+wget https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js -O static/vendor/bootstrap/js/bootstrap.bundle.min.js
+
+# Download Font Awesome files
+wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css -O static/vendor/fontawesome/css/all.min.css
+wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/webfonts/fa-solid-900.woff2 -O static/vendor/fontawesome/webfonts/fa-solid-900.woff2
+wget https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/webfonts/fa-solid-900.ttf -O static/vendor/fontawesome/webfonts/fa-solid-900.ttf
+```
+
+2. Update Font Awesome CSS paths:
+   After downloading the Font Awesome files, you'll need to update the font paths in the CSS file. Edit `static/vendor/fontawesome/css/all.min.css` and replace all references to webfonts with local paths:
+   - Replace `../webfonts/` with `../webfonts/`
+   - This ensures the fonts are loaded from your local server
+
+Now the application can run without an internet connection, serving all resources locally.
